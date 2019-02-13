@@ -3,7 +3,7 @@ function [ delay, delay_ci_lo, delay_ci_up ] = compute_delay( coh, coh_conf, phi
 %   [DELAY,DELAY_CI_LO,DELAY_CI_UP] = COMPUTE_DELAY(COH,COH_CONF,PHI,FREQ) returns 
 %   the DELAY (NxN) matrix with delays between all pairs of N electrodes based on
 %   their phase PHI (NxN) at each frequency FREQ. Only phases where the
-%   coherence COH (NxN) is higher than the threshold of significant conherence
+%   coherence COH (NxN) is higher than the threshold of significant coherence
 %   COH_CONF (NxN) are considered. The lower boundary DELAY_CI_LO and upper 
 %   boundary DELAY_CI_UP of the delays are also returned.
 % 
@@ -58,6 +58,7 @@ function [delay, delaylo, delayhi] = delay_from_phase(phi, freq)
         f_to_fit  =  freq(grpS(imx):grpE(imx));         % get frequency in the longest sequence.
         X = [ones(mx, 1), f_to_fit'];                   % establish predictors (include constant),
         [b,bint,~,~,stats] = regress(phi_to_fit,X);     % perform linear regression,
+% 		bint = b + 1.96*std(phi_to_fit) / sqrt(numel(phi_to_fit)) * [-1; 1];
         delay = b(2) / (2*pi);                          % the delay is the slope of fit, then convert from rad to sec
         delaylo = bint(2,1) / (2*pi);                   % ... lower boundary of 95% confidence interval.
         delayhi = bint(2,2) / (2*pi);                   % ... upper boundary of 95% confidence interval.
@@ -65,7 +66,7 @@ function [delay, delaylo, delayhi] = delay_from_phase(phi, freq)
         
         % find p-values of fit that are too big and set to NaN.
         if mp > PVALUE_THRESH
-            delay = NaN;
+            delay = NaN;	
             delaylo = NaN;
             delayhi = NaN;
         end
