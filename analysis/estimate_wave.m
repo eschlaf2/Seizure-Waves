@@ -12,10 +12,12 @@ function [ src_dir, speed, ci_dir, ci_sp ] = estimate_wave( delay, position, var
 %   at each electrode position with the fitted plane will be shown.
 
 P_THRESH = 0.05;                                                        % Threshold to accept/reject the fit
-MIN_RATIO_FINITE = 0.5;                                                 % we require 50% of electrodes to have a defined delay
+MIN_RATIO_FINITE = 0.25;                                                 % we require 50% of electrodes to have a defined delay
 
 src_dir = nan;
 speed = nan;
+ci_dir = nan;
+ci_sp = nan;
 
 [~, center] = min((position(:,1) - mean(position(:,1))).^2 +...         % find the most central electrode
                   (position(:,2) - mean(position(:,2))).^2);
