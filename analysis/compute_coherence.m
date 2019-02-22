@@ -20,8 +20,9 @@ coh_conf = zeros([size(data,2) size(data,2) length(freq)]);
 for i = 1 : size(data,2)
     d1 = data(:,i);
     d1 = d1 - mean(d1);
+	percent_prog(i, 1, size(data, 2), 'Coherence: ')
     for j = i+1 : size(data,2)
-        fprintf('Coherence electrodes %d - %d...\n', i, j);
+%         fprintf('Coherence electrodes %d - %d...\n', i, j);
         d2 = data(:,j);
         d2 = d2 - mean(d2);
         [coh(i,j,:), phi(i,j,:), ~, ~, ~, ~, coh_conf(i,j,:), ~] = coherencyc(d1, d2, params);
