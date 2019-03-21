@@ -1,4 +1,4 @@
-function [ src_dir, speed, ci_dir, ci_sp ] = estimate_wave( delay, position, varargin )
+function [ src_dir, speed, ci_dir, ci_sp, P0 ] = estimate_wave( delay, position, varargin )
 %ESTIMATE_WAVE Attempts to fit a two-dimensional plane to the delays between electrodes
 %organized in space based on their positions.
 %   [SRC_DIR,SPEED,CI_DIR,CI_SP]=ESTIMATE_WAVE(DELAY,POSITION,VARARGIN)
@@ -18,6 +18,7 @@ src_dir = nan;
 speed = nan;
 ci_dir = nan;
 ci_sp = nan;
+P0 = nan;
 
 [~, center] = min((position(:,1) - mean(position(:,1))).^2 +...         % find the most central electrode
                   (position(:,2) - mean(position(:,2))).^2);
