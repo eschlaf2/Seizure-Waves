@@ -11,7 +11,7 @@ function [ src_dir, speed, ci_dir, ci_sp, P0 ] = estimate_wave( delay, position,
 %   Optional: if the last input is 'plot', a representation of the delays
 %   at each electrode position with the fitted plane will be shown.
 
-P_THRESH = 0.05;                                                        % Threshold to accept/reject the fit
+P_THRESH = Inf;                                                        % Threshold to accept/reject the fit
 MIN_RATIO_FINITE = 0.25;                                                 % we require 50% of electrodes to have a defined delay
 
 src_dir = nan;
