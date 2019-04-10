@@ -14,7 +14,7 @@ delay_ci_lo = zeros(size(coh,1));
 delay_ci_up = zeros(size(coh,1));
 
 for i = 1 : size(coh,2)
-	percent_prog(i, 1, size(coh, 2), 'Delay: ')
+% 	percent_prog(i, 1, size(coh, 2), 'Delay: ')
     for j = i+1 : size(coh,2)
 %         fprintf('Compute delay electrodes %d - %d...\n', i, j);
         coh0 = squeeze(coh(i,j,:));

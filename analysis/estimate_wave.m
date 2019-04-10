@@ -1,4 +1,4 @@
-function [ src_dir, speed, ci_dir, ci_sp, P0 ] = estimate_wave( delay, position, varargin )
+function [b, src_dir, speed, ci_dir, ci_sp, P0 ] = estimate_wave( delay, position, varargin )
 %ESTIMATE_WAVE Attempts to fit a two-dimensional plane to the delays between electrodes
 %organized in space based on their positions.
 %   [SRC_DIR,SPEED,CI_DIR,CI_SP]=ESTIMATE_WAVE(DELAY,POSITION,VARARGIN)
@@ -19,11 +19,11 @@ speed = nan;
 ci_dir = nan;
 ci_sp = nan;
 P0 = nan;
+b = nan;
 
-[~, center] = min((position(:,1) - mean(position(:,1))).^2 +...         % find the most central electrode
-                  (position(:,2) - mean(position(:,2))).^2);
-delay = delay(center,:);                                                % we use delays relative to the center
-
+% [~, center] = min((position(:,1) - mean(position(:,1))).^2 +...         % find the most central electrode
+% 			  (position(:,2) - mean(position(:,2))).^2);
+		  
 if length(find(isfinite(delay))) > MIN_RATIO_FINITE * size(position,1)  % check enough delay data is not NaN.
     [b,stats] = robustfit(position, delay, 'fair');                     % fit the delay vs two-dimensional positions
     H = [0 1 0; 0 0 1];  
@@ -47,7 +47,7 @@ elseif nargin ==3 && strcmp(varargin{1}, 'plot')                        % Visual
 %     figure
     scatter3(position(:,1), position(:,2), 1000 * delay, 200, 1000 * delay, 'filled');
     hold on    
-    plot3(position(center,1), position(center,2), 0, 'X');
+%     plot3(position(center,1), position(center,2), 0, 'X');
     x1fit = linspace(min(position(:,1)), max(position(:,1)), 10);
     x2fit = linspace(min(position(:,2)), max(position(:,2)), 10);
     [X1FIT,X2FIT] = meshgrid(x1fit,x2fit);
