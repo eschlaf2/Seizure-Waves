@@ -23,8 +23,9 @@ b = nan;
 
 % [~, center] = min((position(:,1) - mean(position(:,1))).^2 +...         % find the most central electrode
 % 			  (position(:,2) - mean(position(:,2))).^2);
-		  
-if length(find(isfinite(delay))) > MIN_RATIO_FINITE * size(position,1)  % check enough delay data is not NaN.
+
+finite = sum(isfinite(delay));
+if finite > max(MIN_RATIO_FINITE * size(position,1), 3)  % check enough delay data is not NaN.
     [b,stats] = robustfit(position, delay, 'fair');                     % fit the delay vs two-dimensional positions
     H = [0 1 0; 0 0 1];  
     c = [0 ; 0];
