@@ -5,12 +5,12 @@
 
 % Choose the data set to analyze, either:  seizure, or from two simulation types.
 
-%data_set = 'example_seizure_waves';                        %Example LFP data.
+% data_set = 'example_seizure_waves';                        %Example LFP data.
 data_set = 'example_simulation_waves_fixed_point_source';   %Example simulated data, fixed point source.
 %data_set = 'example_simulation_waves_ictal_wavefront';      %Example simulated data, ictal wavefront.
 
 % Load the data
-load(['../data/' data_set]);
+load(['data/' data_set]);
 
 time = 1/fs * (0 : 1 : size(data,1) - 1);
 
@@ -38,8 +38,9 @@ params.pad = -1;                % ... no zero padding.
 params.fpass = BAND;            % ... freq range to pass
 params.err = [1 0.05];          % ... theoretical error bars, p=0.05.
 
-[coh, phi, freq, coh_conf] = compute_coherence(data, params);
-save(['../data/example_' data_set '_coherence'], 'coh', 'phi', 'freq', 'coh_conf');
+[~, center] = min((position(:,1) - mean(position(:,1))).^2 + (position(:,2) - mean(position(:,2))).^2);
+[coh, phi, freq, coh_conf] = compute_coherence(data, params, 'pairs', center);
+save(['data/example_' data_set '_coherence'], 'coh', 'phi', 'freq', 'coh_conf');
 
 figure;
 plot(freq, squeeze(coh(1,8,:)));

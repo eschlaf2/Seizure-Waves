@@ -9,9 +9,9 @@ function [ delay, delay_ci_lo, delay_ci_up ] = compute_delay( coh, coh_conf, phi
 % 
 % See also DELAY_FROM_PHASE.
 
-delay = zeros(size(coh,1));
-delay_ci_lo = zeros(size(coh,1));
-delay_ci_up = zeros(size(coh,1));
+[delay, delay_ci_lo, delay_ci_up] = deal(zeros(size(coh,1)));
+% delay_ci_lo = zeros(size(coh,1));
+% delay_ci_up = zeros(size(coh,1));
 
 for i = 1 : size(coh,2)
 % 	percent_prog(i, 1, size(coh, 2), 'Delay: ')
@@ -30,7 +30,7 @@ end
 end
 
 
-function [delay, delaylo, delayhi] = delay_from_phase(phi, freq)
+function [delay, delaylo, delayhi] = delay_from_phase(phi0, freq)
 %DELAY_FROM_PHASE Estimates the delay between two electrodes.
 %   [DELAY,DELAYLO,DELAYHI]=DELAY_FROM_PHASE(PHI,FREQ) returns the DELAY
 %   between two electrodes based on their phase PHI at each frequency FREQ.
@@ -49,13 +49,13 @@ function [delay, delaylo, delayhi] = delay_from_phase(phi, freq)
     delayhi = NaN;
     
     % find sequences of repeated finite values in phi
-    v = [false isfinite(phi(:)') false]; % add false to ensure a proper grpS and grpE
+    v = [false isfinite(phi0(:)') false]; % add false to ensure a proper grpS and grpE
     grpS = find(~v(1 : end - 1) & v(2 : end));
     grpE = find(v(1 : end - 1) & ~v(2 : end)) - 1;
     grpN = grpE - grpS + 1;
     [mx, imx] = max(grpN);                              % find longest stretch of 1's (i.e., longest stretch of finite values).
     if mx > N_pts_in_sequence                           % need consecutive run that is long enough in frequency.
-        phi_to_fit = unwrap(phi(grpS(imx):grpE(imx)));  % get phase in the longest sequence.
+        phi_to_fit = unwrap(phi0(grpS(imx):grpE(imx)));  % get phase in the longest sequence.
         f_to_fit  =  freq(grpS(imx):grpE(imx));         % get frequency in the longest sequence.
         X = [ones(mx, 1), f_to_fit'];                   % establish predictors (include constant),
         [b,bint,~,~,stats] = regress(phi_to_fit,X);     % perform linear regression,
@@ -67,10 +67,10 @@ function [delay, delaylo, delayhi] = delay_from_phase(phi, freq)
         
         % find p-values of fit that are too big and set to NaN.
         if mp > PVALUE_THRESH
-            delay = NaN;	
+            delay = NaN;
             delaylo = NaN;
             delayhi = NaN;
-        end
+		end
     end
     
 end

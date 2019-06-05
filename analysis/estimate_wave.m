@@ -25,20 +25,21 @@ b = nan;
 % 			  (position(:,2) - mean(position(:,2))).^2);
 		  
 if length(find(isfinite(delay))) > MIN_RATIO_FINITE * size(position,1)  % check enough delay data is not NaN.
-    [b,stats] = robustfit(position, delay, 'fair');                     % fit the delay vs two-dimensional positions
-    H = [0 1 0; 0 0 1];  
-    c = [0 ; 0];
-    P0 = linhyptest(b, stats.covb, c, H, stats.dfe);                    % perform F test that last two coefs are both 0.
-    
-    if P0 < P_THRESH                                                    % if the fit is significant
-        src_dir = squeeze(atan2(b(3), b(2)));                           % compute the source direction
-        speed = squeeze(1./sqrt(b(2).^2+b(3).^2));                      % compute velocity mm/s
-        samples = mvnrnd(b(2:3), stats.covb(2:3,2:3), 1000);            % generate samples from model.
-        boot_dir = atan2(samples(:,2), samples(:,1));                   % bootstrap direction
-        boot_sp = 1./sqrt(samples(:,1).^2 + samples(:,2).^2);           % bootstrap velocity.
-        ci_dir = quantile(boot_dir, [0.025, 0.975]);                    % CI for direction
-        ci_sp = quantile(boot_sp, [0.025, 0.975]);                      % CI for speed
-    end
+	[b,stats] = robustfit(position, delay, 'fair');                     % fit the delay vs two-dimensional positions
+
+	H = [0 1 0; 0 0 1];  
+	c = [0 ; 0];
+	P0 = linhyptest(b, stats.covb, c, H, stats.dfe);                    % perform F test that last two coefs are both 0.
+
+	if P0 < P_THRESH                                                    % if the fit is significant
+		src_dir = squeeze(atan2(b(3), b(2)));                           % compute the source direction
+		speed = squeeze(1./sqrt(b(2).^2+b(3).^2));                      % compute velocity mm/s
+		samples = mvnrnd(b(2:3), stats.covb(2:3,2:3), 1000);            % generate samples from model.
+		boot_dir = atan2(samples(:,2), samples(:,1));                   % bootstrap direction
+		boot_sp = 1./sqrt(samples(:,1).^2 + samples(:,2).^2);           % bootstrap velocity.
+		ci_dir = quantile(boot_dir, [0.025, 0.975]);                    % CI for direction
+		ci_sp = quantile(boot_sp, [0.025, 0.975]);                      % CI for speed
+	end
 end
 
 if isnan(src_dir)

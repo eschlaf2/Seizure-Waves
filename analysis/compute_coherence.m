@@ -23,7 +23,7 @@ coh_conf = nan([size(data,2) size(data,2) length(freq)]);
 X = triu(X); X(X == 0) = [];
 Y = triu(Y); Y(Y == 0) = [];
 pairs = [X(:) Y(:)];
-pairs(X(:) == Y(:)) = [];
+pairs(X(:) == Y(:), :) = [];
 
 for i = 1:numel(varargin)
 	switch varargin{i}
