@@ -38,7 +38,7 @@
 %---------------------------------------------------------------------
 function [NP, EC, time, last] = seizing_cortical_field(source_del_VeRest, map, time_end, IC)
 
-visualize_results = 1;   %Set this variable to 1 to create plots during simulation.
+visualize_results = 0;   %Set this variable to 1 to create plots during simulation.
 
 noise = 0.5;             %Noise level
 

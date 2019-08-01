@@ -44,12 +44,12 @@
 clear; close all
 
 %%%% Set the output directory ---------------------------------------------
-OUTPUT_DIR = '../data/';  %<--- update this to make sense locally.
+OUTPUT_DIR = 'fixed_point/';  %<--- update this to make sense locally.
 
 %%%% Define the source map. -----------------------------------------------
 k=0;                                            % The initial state.
 map_type = 'fixed_point_source'; K=140;         % The map is either this one, 
-%map_type = 'ictal_wavefront'; K=200;            % Or the map is this one.
+% map_type = 'ictal_wavefront'; K=200;            % Or the map is this one.
 [map,state] = make_map(map_type,k,0);           % Then, make the source map.
 
 %%%% Run the simulation. --------------------------------------------------
@@ -96,22 +96,24 @@ end
 clear; close all
 
 %%%% Specifiy directory where simulation results were saved. --------------
-OUTPUT_DIR = '../data/';  %<--- update this to make sense locally.
+OUTPUT_DIR = '.';  %<--- update this to make sense locally.
 
 %%%% Choose the map type, and specify total number of indices. ------------
-%map_type = 'fixed_point_source'; K=180;         % The map is either this one, 
-map_type = 'ictal_wavefront'; K=200;            % Or the map is this one.
+map_type = 'fixed_point_source'; K=180;         % The map is either this one, 
+% map_type = 'ictal_wavefront'; K=200;            % Or the map is this one.
 
 %%%% Visualize the excitatory population activity. ------------------------
-figure()
+figure(); fullwidth(true);
 counter=1;
-for k=1:2:K                                     %For each 1 s interval, in steps of 2 s,
+for k=1:K                                     %For each 1 s interval, in steps of 2 s,
     fprintf(['Read in ' num2str(k) '\n'])       %... print counter,
                                                 %... load the saved data,
     load([OUTPUT_DIR 'seizing_cortical_field_' map_type '_k_' num2str(k) '.mat'])
     Q0 = last.Qe;                               %... get the excitatory activity at last moment of time,
-    subplot(10,10,counter)                      %... assign a subplot
+%     subplot(10,10,counter)                      %... assign a subplot
     imagesc(Q0, [0 25])                         %... and image the excitatory activity with range [0 25] Hz.
+	colormap bone;
+	mov(counter) = getframe(gcf);
     axis off                                    %... exclude axes for visualization.
     counter=counter+1;                          %... augment the counter.
 end
@@ -122,22 +124,27 @@ end
 clear; close all
 
 %%%% Specifiy directory where simulation results were saved ---------------
-OUTPUT_DIR = '../data/';  %<--- update this to make sense locally.
+OUTPUT_DIR = '.';  %<--- update this to make sense locally.
 
 %%%% Choose the map type, and specify a starting index to load. -----------
-map_type = 'fixed_point_source';k0=120;         % The map is either this one, 
+map_type = 'fixed_point_source';k0=40;         % The map is either this one, 
 %map_type = 'ictal_wavefront'; k0=180;          % Or the map is this one.
 
 %%%% Load 10 s of simulated ECoG and create a new data variable -----------
-K=10;                                           %# of intervals to load.
+K=90;                                           %# of intervals to load.
 T=5000;                                         %Time indices per interval.
 N=9;                                            %# electrodes.
 
 ECOG = zeros(K*T, N);                           %Variable to hold ECoG.
+phi = zeros(K, 3, 3);
 for k=1:K                                       %For each time point,
     fprintf(['Read in ' num2str(k0+k) '\n'])    %... load in simulation, 
     load([OUTPUT_DIR 'seizing_cortical_field_' map_type  '_k_'  num2str(k0+k) '.mat'])
-    ECOG(1+(k-1)*T:k*T,:)=EC.Qe;                %... and store the result.
+    ECOG(1+(k-1)*T:k*T,:)=reshape(NP.Qe, T, N);                %... and store the result.
+	phi(k,:, :)=last.phi_ee(49:51, 49:51);
+	figure(1); fullwidth(); subplot(121); imagesc(last.Qe); subplot(122); imagesc(squeeze(NP.Qe(1, :, :))); title(sprintf('k = %d', k+k0))
+	drawnow()
+	pause(.01)
 end
 
 %%%% Downsample the simulation data from to 500 Hz. -----------------------
@@ -159,4 +166,4 @@ position = [x;y]';
 
 %%%% Save the results. ----------------------------------------------------
 % NOTE: This file can be loaded and analyzed in analysis/main_seizure_wave.m
-save(['../data/example_simulation_waves_' map_type '.mat'], 'data', 'fs', 'position')
+save(['data/example_simulation_waves_' map_type '.mat'], 'data', 'fs', 'position')
