@@ -2,14 +2,15 @@
 %
 %  When the map is set to "fixed_point_source":
 %  For 180 s, the source is set to be either on or off, as follows,
-%         0- 40 s: the source is *off*
-%        41-140 s: the source is *on*
+%         0- 10 s: the source is *off*
+%        11-140 s: the source is *on*
 %       141-180 s: the source is *off*
 %
 %  When the map is "ictal_wavefront":
 %  For 200 s, the source is a slowly evolving ictal wavefront, for which,
-%         0- 40 s: the source is *off*
-%        41-200 s: the source is *on*
+%         0- 10 s: the source is *off*
+%        11-200 s: the source is *on*
+%       200-240 s: the source is *off*
 %
 %CALLS:
 %
@@ -41,23 +42,17 @@
 
 %map_type = 'fixed_point_source'; K=140;         % The map is either this one, 
 map_type = 'ictal_wavefront'; K=200;            % Or the map is this one.
+padding = [10 40];
 
 switch lower(whichcell)
 %% CELL A.  Run the simulation.
     case 'a'
-
-clearvars -except map_type K; close all
 
 %%%% Set the output directory ---------------------------------------------
 OUTPUT_DIR = 'fixed_point/';  %<--- update this to make sense locally.
 
 %%%% Define the source map. -----------------------------------------------
 k=0;                                            % The initial state.
-<<<<<<< HEAD
-=======
-map_type = 'fixed_point_source'; K=140;         % The map is either this one, 
-% map_type = 'ictal_wavefront'; K=200;            % Or the map is this one.
->>>>>>> f60289f36f4cbeaaa51d9806e7ed161cde2de228
 [map,state] = make_map(map_type,k,0);           % Then, make the source map.
 
 %%%% Run the simulation. --------------------------------------------------
@@ -69,7 +64,7 @@ if strcmp(map_type, 'ictal_wavefront')          %When using the ictal wavefront 
 end
 
 for k=1:K                                       %For K intervals of 1 s duration,
-    if k<=40                                    %... for first 40 s,
+    if k<=padding(1)                                    %... for first 40 s,
         source_drive=mean(last.dVe(:));         %... include no source drive,
     else                                        %... beyond 40 s,
         source_drive=3;                         %... increase source drive.
@@ -86,34 +81,24 @@ for k=1:K                                       %For K intervals of 1 s duration
     end
 end
 
-if strcmp(map_type, 'fixed_point_source')       %When using the focal point source map,    
-                                                %... run simulation for more time, and remove source driver.
-    source_drive = 1.5;                         %Set the source drive equivalent to background,
-    for k=141:180                               %...  run the simulation for 40 s more,
-        fprintf(['Running simulation ' num2str(k) '... \n'])
-        [NP, EC, time, last] = seizing_cortical_field(source_drive, map, T0, last);
-                                                %... save the results of this run.
-        save([OUTPUT_DIR 'seizing_cortical_field_' map_type '_k_' num2str(k) '.mat'], ...
-            'NP','EC','time','last')
-    end
+%... run simulation for more time, and remove source driver.
+source_drive = 1.5;                         %Set the source drive equivalent to background,
+for k=K:K+padding(2)                               %...  run the simulation for 40 s more,
+    fprintf(['Running simulation ' num2str(k) '... \n'])
+    [NP, EC, time, last] = seizing_cortical_field(source_drive, map, T0, last);
+                                            %... save the results of this run.
+    save([OUTPUT_DIR 'seizing_cortical_field_' map_type '_k_' num2str(k) '.mat'], ...
+        'NP','EC','time','last')
 end
 
 %% Cell B. Visualize the activity of the excitatory population. -----------
 %  NOTE:  This cell should be run after Cell A is complete.
     case 'b'
 
-clearvars -except map_type K; close all
-
 %%%% Specifiy directory where simulation results were saved. --------------
 OUTPUT_DIR = '.';  %<--- update this to make sense locally.
 
 %%%% Choose the map type, and specify total number of indices. ------------
-<<<<<<< HEAD
-=======
-map_type = 'fixed_point_source'; K=180;         % The map is either this one, 
-% map_type = 'ictal_wavefront'; K=200;            % Or the map is this one.
->>>>>>> f60289f36f4cbeaaa51d9806e7ed161cde2de228
-
 %%%% Visualize the excitatory population activity. ------------------------
 figure(); fullwidth(true);
 counter=1;
@@ -134,18 +119,11 @@ end
 %  NOTE:  This cell can be run after the Cell A is complete.
     case 'c'
 
-clearvars -except map_type K; close all
 
 %%%% Specifiy directory where simulation results were saved ---------------
 OUTPUT_DIR = '.';  %<--- update this to make sense locally.
 
 %%%% Choose the map type, and specify a starting index to load. -----------
-<<<<<<< HEAD
-=======
-map_type = 'fixed_point_source';k0=40;         % The map is either this one, 
-%map_type = 'ictal_wavefront'; k0=180;          % Or the map is this one.
->>>>>>> f60289f36f4cbeaaa51d9806e7ed161cde2de228
-
 %%%% Load 10 s of simulated ECoG and create a new data variable -----------
 K=90;                                           %# of intervals to load.
 T=5000;                                         %Time indices per interval.
@@ -182,10 +160,5 @@ position = [x;y]';
 
 %%%% Save the results. ----------------------------------------------------
 % NOTE: This file can be loaded and analyzed in analysis/main_seizure_wave.m
-<<<<<<< HEAD
 save(['../data/example_simulation_waves_' map_type '.mat'], 'data', 'fs', 'position')
 end
-
-=======
-save(['data/example_simulation_waves_' map_type '.mat'], 'data', 'fs', 'position')
->>>>>>> f60289f36f4cbeaaa51d9806e7ed161cde2de228
