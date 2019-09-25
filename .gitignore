@@ -1,4 +1,8 @@
 *~
-data/*mat
 modeling/mbatch*
-modeling/*avi
+*avi
+data
+*png
+.DS_Store
+ictal_wavefront/
+seizing_cortical_field_sim.mat
