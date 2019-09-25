@@ -49,7 +49,7 @@ switch lower(whichcell)
     case 'a'
 
 %%%% Set the output directory ---------------------------------------------
-OUTPUT_DIR = 'fixed_point/';  %<--- update this to make sense locally.
+OUTPUT_DIR = '../data/';  %<--- update this to make sense locally.
 
 %%%% Define the source map. -----------------------------------------------
 k=0;                                            % The initial state.
