@@ -38,7 +38,7 @@
 %---------------------------------------------------------------------
 function [NP, EC, time, last] = seizing_cortical_field(source_del_VeRest, map, time_end, IC)
 
-visualize_results = 1;   %Set this variable to 1 to create plots during simulation.
+visualize_results = 0;   %Set this variable to 1 to create plots during simulation.
 
 noise = 0.5;             %Noise level
 
@@ -122,19 +122,22 @@ D22 = D2/dx^2;
 % "Microscale" electrode positions.
 xNP = Nx/2;                 
 yNP = Ny/2;
+halfWin = 4;
+win = 2 * halfWin + 1;
+
 % "Macroscale" electrode positions.
 rEC = Nx/2 + [      -12, -12, -12,   0,  0,  0,  12, 12, 12]/3;
 cEC = Ny/2 + [      -12,   0,  12, -12,  0, 12, -12,  0, 12]/3;
 
 % Output variables for microscale, (*) denotes returned.
- QeNP = zeros(Nsteps,3,3);              %Activity of excitatory population.   (*)
- VeNP = zeros(Nsteps,3,3);              %Voltage  of excitatory population.   (*)
- QiNP = zeros(Nsteps,3,3);              %Activity of inhibitory population.
- ViNP = zeros(Nsteps,3,3);              %Voltage  of inhibitory population.
-  DNP = zeros(Nsteps,3,3);              %Inhibitory-to-inhibitory gap junction strength.
-  KNP = zeros(Nsteps,3,3);              %Extracellular potassium.
- dVeNP= zeros(Nsteps,3,3);              %Change in resting voltage of excitatory population.
- dViNP= zeros(Nsteps,3,3);              %Change in resting voltage of inhibitory population.
+ QeNP = zeros(Nsteps,win,win);              %Activity of excitatory population.   (*)
+ VeNP = zeros(Nsteps,win,win);              %Voltage  of excitatory population.   (*)
+ QiNP = zeros(Nsteps,win,win);              %Activity of inhibitory population.
+ ViNP = zeros(Nsteps,win,win);              %Voltage  of inhibitory population.
+  DNP = zeros(Nsteps,win,win);              %Inhibitory-to-inhibitory gap junction strength.
+  KNP = zeros(Nsteps,win,win);              %Extracellular potassium.
+ dVeNP= zeros(Nsteps,win,win);              %Change in resting voltage of excitatory population.
+ dViNP= zeros(Nsteps,win,win);              %Change in resting voltage of inhibitory population.
 
 % Output variables for macroscale, (*) denotes returned.
  QeEC = zeros(Nsteps,length(rEC));      %Activity of excitatory population.   (*)
@@ -184,14 +187,14 @@ B_ei = noise_sf * sqrt(noise_sc* HL.phi_ei_sc / dt);
 for i = 1: Nsteps
 
     %Save the "microscale" dynamics.
-    QeNP(i,:,:) =    Qe_grid(xNP-1:xNP+1, yNP-1:yNP+1);
-    VeNP(i,:,:) =    Ve_grid(xNP-1:xNP+1, yNP-1:yNP+1);
-    QiNP(i,:,:) =    Qi_grid(xNP-1:xNP+1, yNP-1:yNP+1);
-    ViNP(i,:,:) =    Vi_grid(xNP-1:xNP+1, yNP-1:yNP+1);
-     DNP(i,:,:) =        D22(xNP-1:xNP+1, yNP-1:yNP+1);
-     KNP(i,:,:) =          K(xNP-1:xNP+1, yNP-1:yNP+1);
-   dVeNP(i,:,:) = del_VeRest(xNP-1:xNP+1, yNP-1:yNP+1);
-   dViNP(i,:,:) = del_ViRest(xNP-1:xNP+1, yNP-1:yNP+1);
+    QeNP(i,:,:) =    Qe_grid(xNP-halfWin:xNP+halfWin, yNP-halfWin:yNP+halfWin);
+    VeNP(i,:,:) =    Ve_grid(xNP-halfWin:xNP+halfWin, yNP-halfWin:yNP+halfWin);
+    QiNP(i,:,:) =    Qi_grid(xNP-halfWin:xNP+halfWin, yNP-halfWin:yNP+halfWin);
+    ViNP(i,:,:) =    Vi_grid(xNP-halfWin:xNP+halfWin, yNP-halfWin:yNP+halfWin);
+     DNP(i,:,:) =        D22(xNP-halfWin:xNP+halfWin, yNP-halfWin:yNP+halfWin);
+     KNP(i,:,:) =          K(xNP-halfWin:xNP+halfWin, yNP-halfWin:yNP+halfWin);
+   dVeNP(i,:,:) = del_VeRest(xNP-halfWin:xNP+halfWin, yNP-halfWin:yNP+halfWin);
+   dViNP(i,:,:) = del_ViRest(xNP-halfWin:xNP+halfWin, yNP-halfWin:yNP+halfWin);
     
     %Save the "macroscale" dynamics.
     for ck=1:length(rEC)
@@ -494,12 +497,16 @@ last.K = K;
 %%%% Define the output variables of simulation.
 
 NP = {};
-NP.Qe = QeNP;
-NP.Ve = VeNP;
+NP.Qe = single(QeNP);
+NP.Ve = single(VeNP);
+NP.Qi = single(QiNP);
+NP.Vi = single(ViNP);
 
 EC = {};
-EC.Qe = QeEC;
-EC.Ve = VeEC;
+EC.Qe = single(QeEC);
+EC.Ve = single(VeEC);
+EC.Qi = single(QiEC);
+EC.Vi = single(ViEC);
 
 end
 
