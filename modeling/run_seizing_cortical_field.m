@@ -53,42 +53,62 @@ map_type = 'fixed_point_source'; K=140;         % The map is either this one,
 [map,state] = make_map(map_type,k,0);           % Then, make the source map.
 
 %%%% Run the simulation. --------------------------------------------------
-T0 = 1;                                         %Simulate 1 s intervals.
+% T0 = 1;                                         %Simulate 1 s intervals.
 load('seizing_cortical_field_IC.mat')           %Load the initial conditions to start.
 
 if strcmp(map_type, 'ictal_wavefront')          %When using the ictal wavefront map,     
     last.dVe = zeros(size(last.dVe)) - 1 ;      %... adjust offset to resting potential of excitatory population (mV)
 end
 
-for k=1:K                                       %For K intervals of 1 s duration,
-    if k<=40                                    %... for first 40 s,
-        source_drive=mean(last.dVe(:));         %... include no source drive,
-    else                                        %... beyond 40 s,
-        source_drive=3;                         %... increase source drive.
-    end
-    fprintf(['Running simulation ' map_type ', ' num2str(k) ' ... \n'])
-                                                %Run the simulation,
-    [NP, EC, time, last] = seizing_cortical_field(source_drive, map, T0, last);
-                                                %... save the results of this run.
-    save([OUTPUT_DIR 'seizing_cortical_field_' map_type '_k_' num2str(k) '.mat'], ...
-        'NP','EC','time','last')
-    
-    if strcmp(map_type, 'ictal_wavefront')      %... when appropriate, update ictal wavefront location.
-        [map,state] = make_map(map_type,k,state);
-    end
-end
+% phase 1 (source off)
+T0 = 10;  % preseizure period is 10 seconds
+last.phase = 1;
+source_drive = 1;
+[~, ~, ~, last, fig] = seizing_cortical_field(source_drive, map, T0, last);
 
-if strcmp(map_type, 'fixed_point_source')       %When using the focal point source map,    
-                                                %... run simulation for more time, and remove source driver.
-    source_drive = 1.5;                         %Set the source drive equivalent to background,
-    for k=141:180                               %...  run the simulation for 40 s more,
-        fprintf(['Running simulation ' num2str(k) '... \n'])
-        [NP, EC, time, last] = seizing_cortical_field(source_drive, map, T0, last);
-                                                %... save the results of this run.
-        save([OUTPUT_DIR 'seizing_cortical_field_' map_type '_k_' num2str(k) '.mat'], ...
-            'NP','EC','time','last')
-    end
-end
+% phase 2 (source on)
+T0 = 90;  % Source on for 90 seconds
+last.phase = 2;
+source_drive = 3;
+[~, ~, ~, last, fig] = seizing_cortical_field(source_drive, map, T0, last, fig);
+
+% phase 3 (source off)
+T0 = 30;
+last.phase = 3;
+source_drive = 1.5;
+[~, ~, ~, last, fig] = seizing_cortical_field(source_drive, map, T0, last, fig);
+
+% for k=1:K                                       %For K intervals of 1 s duration,
+% 	last.phase = k;
+%     if k<=40                                    %... for first 40 s,
+%         source_drive=mean(last.dVe(:));         %... include no source drive,
+%     else                                        %... beyond 40 s,
+%         source_drive=3;                         %... increase source drive.
+%     end
+%     fprintf(['Running simulation ' map_type ', ' num2str(k) ' ... \n'])
+%                                                 %Run the simulation,
+%     [NP, EC, time, last] = seizing_cortical_field(source_drive, map, T0, last);
+%                                                 %... save the results of this run.
+% 	
+%     save([OUTPUT_DIR 'seizing_cortical_field_' map_type '_k_' num2str(k) '.mat'], ...
+%         'NP','EC','time','last')
+%     
+%     if strcmp(map_type, 'ictal_wavefront')      %... when appropriate, update ictal wavefront location.
+%         [map,state] = make_map(map_type,k,state);
+%     end
+% end
+% 
+% if strcmp(map_type, 'fixed_point_source')       %When using the focal point source map,    
+%                                                 %... run simulation for more time, and remove source driver.
+%     source_drive = 1.5;                         %Set the source drive equivalent to background,
+%     for k=141:180                               %...  run the simulation for 40 s more,
+%         fprintf(['Running simulation ' num2str(k) '... \n'])
+%         [NP, EC, time, last] = seizing_cortical_field(source_drive, map, T0, last);
+%                                                 %... save the results of this run.
+%         save([OUTPUT_DIR 'seizing_cortical_field_' map_type '_k_' num2str(k) '.mat'], ...
+%             'NP','EC','time','last')
+%     end
+% end
 
 %% Cell B. Visualize the activity of the excitatory population. -----------
 %  NOTE:  This cell should be run after Cell A is complete.

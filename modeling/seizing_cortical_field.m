@@ -36,15 +36,19 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %---------------------------------------------------------------------
-function [NP, EC, time, last] = seizing_cortical_field(source_del_VeRest, map, time_end, IC)
+function [NP, EC, time, last, fig] = seizing_cortical_field(source_del_VeRest, map, time_end, IC, fig)
 
-visualize_results = 0;   %Set this variable to 1 to create plots during simulation.
+%% Preferences
+visualize_results = true;   %Set this variable to true to create plots during simulation.
+save_results = true;        %Set this variable to true to create png files of plots and save the sim to txt files
+basename = 'scf_sim';
 
 noise = 0.5;             %Noise level
 
 del_VeRest0 = 1;         %offset to resting potential of excitatory population (mV)
 del_ViRest0 = 0.1;       %offset to resting potential of inhibitry population (mV)
 
+%% Parameter
 %Parameters for proportion of extracellular potassium.
 K0 = 0;         %initial value.
 tau_K = 200;    %time-constant (/s).
@@ -67,6 +71,13 @@ del_ViRest = zeros(Nx,Ny)+del_ViRest0;  %Set initial inhibitory resting potentia
 D1 = zeros(Nx,Ny)+0.8/100;              %Set initial i <--> i gap-junction diffusive-coupling strength in all space (cm^2)
 D2 = zeros(Nx,Ny)+0.8;                  %Set initial e <--> e gap-junction diffusive-coupling strength in all space (cm^2)
 K  = zeros(Nx,Ny)+K0;                   %Set initial extracellular ion concentration in all space (cm^2)
+
+% Create a directory to store results
+if save_results
+	if ~exist(basename, 'dir'), mkdir(basename), end
+end
+
+if ~isfield(IC, 'phase'), IC.phase = 0; end
 
 % initialize constants for Seizing Cortical Model
 global HL
@@ -181,6 +192,51 @@ K = IC.K;
 B_ee = noise_sf * sqrt(noise_sc* HL.phi_ee_sc / dt);
 B_ei = noise_sf * sqrt(noise_sc* HL.phi_ei_sc / dt);
 
+%% Visualization initialization
+% Visualization
+if visualize_results || save_results
+	titles = {'Qe', 'Qi', 'K', 'Qe + Qi'};
+	clims = {[0 30], [0 30], [0 1], [0 30]};
+	tt = -1;
+	if ~exist('fig', 'var')
+	fig = figure;
+	h = gobjects(4, 1);
+	th = gobjects(4, 1);
+	ah = gobjects(4, 1);
+	% Image of excitatory population activity.
+	  for ii = 1:4
+% 		  h(ii) = subplot(2,2,ii);
+		  h(ii) = subplot(2,2,ii);
+		  ah(ii) = imagesc(1:Nx, 1:Ny, zeros(Nx, Ny), clims{ii});
+		  th(ii) = title(titles{ii});
+		  colormap jet; axis equal; axis tight; axis ij;
+		  if ~visualize_results, 
+			  set(gcf, 'visible', 'off')
+% 			  set(ah(ii), 'visible', 'off'), 
+% 			  set(h(ii), 'visible', 'off'), 
+		  end
+	  end
+
+	  % Indicate electrode positions.
+	  hold(h(1), 'on')
+	  plot(h(1), xNP-1:xNP+1, yNP-1, '*k')
+	  plot(h(1), xNP-1:xNP+1, yNP,   '*k')
+	  plot(h(1), xNP-1:xNP+1, yNP+1, '*k')
+	  for ck=1:length(rEC)
+		  plot(h(1), [rEC(ck)-2, rEC(ck)+2, rEC(ck)+2, rEC(ck)-2, rEC(ck)-2], ...
+			  [cEC(ck)-2, cEC(ck)-2, cEC(ck)+2, cEC(ck)+2, cEC(ck)-2])
+	  end
+	  hold(h(1), 'off')
+	else
+		nax = length(fig.Children);
+		for ii = 0:nax - 1
+			ah(ii+1) = fig.Children(nax - ii).Children(end);
+			th(ii+1) = fig.Children(nax - ii).Title;
+		end
+	end
+end
+
+%% Simulation
 for i = 1: Nsteps
 
     %Save the "microscale" dynamics.
@@ -416,44 +472,35 @@ del_ViRest(:,Ny) = del_ViRest(:,Ny-1);
       %Visualization
       
       if visualize_results == 1
-          stride2 = 100;
-          if (mod(i, stride2) == 1 || i == Nsteps)
-              
+          stride2 = 1e-3;
+		  if floor(time(i)/stride2) > tt, 
+			  tt = tt + 1;
+%           if (mod(i, stride2) == 1 || i == Nsteps)
+% 		  if i == Nsteps
               % Image of excitatory population activity.
-              subplot(2,2,1)
-              imagesc(1:Nx, 1:Ny, Qe_grid, [0 30]);
-              
-              % Indicate electrode positions.
-              hold on
-              plot(xNP-1:xNP+1, yNP-1, '*k')
-              plot(xNP-1:xNP+1, yNP,   '*k')
-              plot(xNP-1:xNP+1, yNP+1, '*k')
-              for ck=1:length(rEC)
-                  plot([rEC(ck)-2, rEC(ck)+2, rEC(ck)+2, rEC(ck)-2, rEC(ck)-2], ...
-                      [cEC(ck)-2, cEC(ck)-2, cEC(ck)+2, cEC(ck)+2, cEC(ck)-2])
-              end
-              hold off
-              colormap jet; axis equal; axis tight; axis ij;
-              title('Qe')
+			  set(ah(1), 'cdata', Qe_grid);
+			  fname = sprintf('%s%s%s_%d_%06d', ...
+				  basename, filesep, titles{1}, IC.phase, floor(time(i)*1e4));
+			  imwrite(frame2im(getframe), [fname '.png']);
+			  csvwrite([fname '.txt'], Qe_grid);
               
               % Image of inhibitory population activity.
-              subplot(2,2,2)
-              imagesc(1:Nx, 1:Ny, Qi_grid, [0 30]);
-              colormap jet; axis equal; axis tight; axis ij;
-              title('Qi')
+			  set(ah(2), 'cdata', Qi_grid);
+			  fname = sprintf('%s%s%s_%d_%06d', ...
+				  basename, filesep, titles{2}, IC.phase, floor(time(i)*1e4));
+			  imwrite(frame2im(getframe), [fname '.png']);
+			  csvwrite([fname '.txt'], Qi_grid);
               
               % Image of extracellular ion proportion.
-              subplot(2,2,3)
-              imagesc(1:Nx, 1:Ny, K, [0 1]);
-              colormap jet; axis equal; axis tight; axis ij;
-              title(['K ' num2str(mean(K(:)),2)])
+			  set(ah(3), 'cdata', K)
+			  set(th(3), 'string', sprintf('K %2f', mean(K(:))))
               
               % Image of inhibitory gap junction strength.
-              subplot(2,2,4)
-              imagesc(1:Nx, 1:Ny, D22, [0,10]);
-              colormap jet; axis equal; axis tight; axis ij;
-              title('D22')
-              
+			  set(ah(4), 'cdata', Qe_grid + Qi_grid);  
+			  fname = sprintf('%s%s%s_%d_%06d', ...
+				  basename, filesep, 'QeplusQi', IC.phase, floor(time(i)*1e4));
+			  imwrite(frame2im(getframe), [fname '.png']);
+			  csvwrite([fname '.txt'], Qi_grid + Qe_grid);
               drawnow;
           end
       end
