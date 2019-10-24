@@ -2,14 +2,15 @@
 %
 %  When the map is set to "fixed_point_source":
 %  For 180 s, the source is set to be either on or off, as follows,
-%         0- 40 s: the source is *off*
-%        41-140 s: the source is *on*
+%         0- 10 s: the source is *off*
+%        11-140 s: the source is *on*
 %       141-180 s: the source is *off*
 %
 %  When the map is "ictal_wavefront":
 %  For 200 s, the source is a slowly evolving ictal wavefront, for which,
-%         0- 40 s: the source is *off*
-%        41-200 s: the source is *on*
+%         0- 10 s: the source is *off*
+%        11-200 s: the source is *on*
+%       200-240 s: the source is *off*
 %
 %CALLS:
 %
@@ -39,17 +40,19 @@
 % Department of Mathematics and Statistics, Boston University, USA.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% CELL A.  Run the simulation.
+%map_type = 'fixed_point_source'; K=140;         % The map is either this one, 
+map_type = 'ictal_wavefront'; K=200;            % Or the map is this one.
+padding = [10 40];
 
-clear; close all
+switch lower(whichcell)
+%% CELL A.  Run the simulation.
+    case 'a'
 
 %%%% Set the output directory ---------------------------------------------
-OUTPUT_DIR = 'fixed_point/';  %<--- update this to make sense locally.
+OUTPUT_DIR = '../data/';  %<--- update this to make sense locally.
 
 %%%% Define the source map. -----------------------------------------------
 k=0;                                            % The initial state.
-map_type = 'fixed_point_source'; K=140;         % The map is either this one, 
-% map_type = 'ictal_wavefront'; K=200;            % Or the map is this one.
 [map,state] = make_map(map_type,k,0);           % Then, make the source map.
 
 %%%% Run the simulation. --------------------------------------------------
@@ -112,16 +115,12 @@ source_drive = 1.5;
 
 %% Cell B. Visualize the activity of the excitatory population. -----------
 %  NOTE:  This cell should be run after Cell A is complete.
-
-clear; close all
+    case 'b'
 
 %%%% Specifiy directory where simulation results were saved. --------------
 OUTPUT_DIR = '.';  %<--- update this to make sense locally.
 
 %%%% Choose the map type, and specify total number of indices. ------------
-map_type = 'fixed_point_source'; K=180;         % The map is either this one, 
-% map_type = 'ictal_wavefront'; K=200;            % Or the map is this one.
-
 %%%% Visualize the excitatory population activity. ------------------------
 figure(); fullwidth(true);
 counter=1;
@@ -140,16 +139,13 @@ end
 
 %% Cell C. Create example 10 s of ECoG data to analyze wave dynamics.
 %  NOTE:  This cell can be run after the Cell A is complete.
+    case 'c'
 
-clear; close all
 
 %%%% Specifiy directory where simulation results were saved ---------------
 OUTPUT_DIR = '.';  %<--- update this to make sense locally.
 
 %%%% Choose the map type, and specify a starting index to load. -----------
-map_type = 'fixed_point_source';k0=40;         % The map is either this one, 
-%map_type = 'ictal_wavefront'; k0=180;          % Or the map is this one.
-
 %%%% Load 10 s of simulated ECoG and create a new data variable -----------
 K=90;                                           %# of intervals to load.
 T=5000;                                         %Time indices per interval.
@@ -186,4 +182,5 @@ position = [x;y]';
 
 %%%% Save the results. ----------------------------------------------------
 % NOTE: This file can be loaded and analyzed in analysis/main_seizure_wave.m
-save(['data/example_simulation_waves_' map_type '.mat'], 'data', 'fs', 'position')
+save(['../data/example_simulation_waves_' map_type '.mat'], 'data', 'fs', 'position')
+end
