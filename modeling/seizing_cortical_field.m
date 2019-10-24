@@ -36,15 +36,13 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %---------------------------------------------------------------------
-function [NP, EC, time, last, fig] = seizing_cortical_field(source_del_VeRest, map, time_end, IC, fig, prefs)
+function [NP, EC, time, last, fig] = seizing_cortical_field(source_del_VeRest, map, time_end, IC, fig, params)
 
-%% Preferences
-
-if ~exist('prefs', 'var'), prefs = init_scm_params(); end
-
-del_VeRest0 = prefs.delVeRest0;  %offset to resting potential of excitatory population (mV)       
-del_ViRest0 = prefs.delViRest0;       %offset to resting potential of inhibitry population (mV)
-
+%% Preferences and parameters
+if ~exist('prefs', 'var') || isempty(params), params = init_scm_params(), end
+visualize_results = params.visualize_results;
+grid_size = params.grid_size;
+noise = params.noise;
 
 %% Parameter
 %Parameters for proportion of extracellular potassium.
@@ -62,10 +60,9 @@ tau_dVe = 250;  %excitatory population resting voltage time-constant (/s).
 tau_dVi = 250;  %inhibitory population resting voltage time-constant (/s).
 
 % set no. of sampling points (must be even!) along each axis of cortical grid
-[Nx, Ny] = deal(100);
+Nx = grid_size(1);
+Ny = grid_size(2);
 
-del_VeRest = zeros(Nx,Ny)+del_VeRest0;	%Set initial excitatory resting potential offset in all space (mV)
-del_ViRest = zeros(Nx,Ny)+del_ViRest0;  %Set initial inhibitory resting potential offset in all space (mV)
 D1 = zeros(Nx,Ny)+0.8/100;              %Set initial i <--> i gap-junction diffusive-coupling strength in all space (cm^2)
 D2 = zeros(Nx,Ny)+0.8;                  %Set initial e <--> e gap-junction diffusive-coupling strength in all space (cm^2)
 K  = zeros(Nx,Ny)+K0;                   %Set initial extracellular ion concentration in all space (cm^2)
