@@ -36,17 +36,15 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %---------------------------------------------------------------------
-function [NP, EC, time, last, fig] = seizing_cortical_field(source_del_VeRest, map, time_end, IC, fig)
+function [NP, EC, time, last, fig] = seizing_cortical_field(source_del_VeRest, map, time_end, IC, fig, prefs)
 
 %% Preferences
-visualize_results = true;   %Set this variable to true to create plots during simulation.
-save_results = true;        %Set this variable to true to create png files of plots and save the sim to txt files
-basename = 'scf_sim';
 
-noise = 0.5;             %Noise level
+if ~exist('prefs', 'var'), prefs = init_scm_params(); end
 
-del_VeRest0 = 1;         %offset to resting potential of excitatory population (mV)
-del_ViRest0 = 0.1;       %offset to resting potential of inhibitry population (mV)
+del_VeRest0 = prefs.delVeRest0;  %offset to resting potential of excitatory population (mV)       
+del_ViRest0 = prefs.delViRest0;       %offset to resting potential of inhibitry population (mV)
+
 
 %% Parameter
 %Parameters for proportion of extracellular potassium.
@@ -71,11 +69,6 @@ del_ViRest = zeros(Nx,Ny)+del_ViRest0;  %Set initial inhibitory resting potentia
 D1 = zeros(Nx,Ny)+0.8/100;              %Set initial i <--> i gap-junction diffusive-coupling strength in all space (cm^2)
 D2 = zeros(Nx,Ny)+0.8;                  %Set initial e <--> e gap-junction diffusive-coupling strength in all space (cm^2)
 K  = zeros(Nx,Ny)+K0;                   %Set initial extracellular ion concentration in all space (cm^2)
-
-% Create a directory to store results
-if save_results
-	if ~exist(basename, 'dir'), mkdir(basename), end
-end
 
 if ~isfield(IC, 'phase'), IC.phase = 0; end
 
@@ -133,22 +126,19 @@ D22 = D2/dx^2;
 % "Microscale" electrode positions.
 xNP = Nx/2;                 
 yNP = Ny/2;
-halfWin = 4;
-win = 2 * halfWin + 1;
-
 % "Macroscale" electrode positions.
 rEC = Nx/2 + [      -12, -12, -12,   0,  0,  0,  12, 12, 12]/3;
 cEC = Ny/2 + [      -12,   0,  12, -12,  0, 12, -12,  0, 12]/3;
 
 % Output variables for microscale, (*) denotes returned.
- QeNP = zeros(Nsteps,win,win);              %Activity of excitatory population.   (*)
- VeNP = zeros(Nsteps,win,win);              %Voltage  of excitatory population.   (*)
- QiNP = zeros(Nsteps,win,win);              %Activity of inhibitory population.
- ViNP = zeros(Nsteps,win,win);              %Voltage  of inhibitory population.
-  DNP = zeros(Nsteps,win,win);              %Inhibitory-to-inhibitory gap junction strength.
-  KNP = zeros(Nsteps,win,win);              %Extracellular potassium.
- dVeNP= zeros(Nsteps,win,win);              %Change in resting voltage of excitatory population.
- dViNP= zeros(Nsteps,win,win);              %Change in resting voltage of inhibitory population.
+ QeNP = zeros(Nsteps,3,3);              %Activity of excitatory population.   (*)
+ VeNP = zeros(Nsteps,3,3);              %Voltage  of excitatory population.   (*)
+ QiNP = zeros(Nsteps,3,3);              %Activity of inhibitory population.
+ ViNP = zeros(Nsteps,3,3);              %Voltage  of inhibitory population.
+  DNP = zeros(Nsteps,3,3);              %Inhibitory-to-inhibitory gap junction strength.
+  KNP = zeros(Nsteps,3,3);              %Extracellular potassium.
+ dVeNP= zeros(Nsteps,3,3);              %Change in resting voltage of excitatory population.
+ dViNP= zeros(Nsteps,3,3);              %Change in resting voltage of inhibitory population.
 
 % Output variables for macroscale, (*) denotes returned.
  QeEC = zeros(Nsteps,length(rEC));      %Activity of excitatory population.   (*)
@@ -197,39 +187,33 @@ B_ei = noise_sf * sqrt(noise_sc* HL.phi_ei_sc / dt);
 
 %% Visualization initialization
 % Visualization
-if visualize_results || save_results
+if visualize_results
 	titles = {'Qe', 'Qi', 'K', 'Qe + Qi'};
 	clims = {[0 30], [0 30], [0 1], [0 30]};
 	tt = -1;
-	if ~exist('fig', 'var')
-	fig = figure;
-	h = gobjects(4, 1);
-	th = gobjects(4, 1);
-	ah = gobjects(4, 1);
-	% Image of excitatory population activity.
-	  for ii = 1:4
-% 		  h(ii) = subplot(2,2,ii);
-		  h(ii) = subplot(2,2,ii);
-		  ah(ii) = imagesc(1:Nx, 1:Ny, zeros(Nx, Ny), clims{ii});
-		  th(ii) = title(titles{ii});
-		  colormap jet; axis equal; axis tight; axis ij;
-		  if ~visualize_results, 
-			  set(gcf, 'visible', 'off')
-% 			  set(ah(ii), 'visible', 'off'), 
-% 			  set(h(ii), 'visible', 'off'), 
+	if ~exist('fig', 'var') || isempty(fig)
+		fig = figure;
+		h = gobjects(4, 1);
+		th = gobjects(4, 1);
+		ah = gobjects(4, 1);
+		% Image of excitatory population activity.
+		  for ii = 1:4
+			  h(ii) = subplot(2,2,ii);
+			  ah(ii) = imagesc(1:Nx, 1:Ny, zeros(Nx, Ny), clims{ii});
+			  th(ii) = title(titles{ii});
+			  colormap jet; axis equal; axis tight; axis ij;
 		  end
-	  end
 
-	  % Indicate electrode positions.
-	  hold(h(1), 'on')
-	  plot(h(1), xNP-1:xNP+1, yNP-1, '*k')
-	  plot(h(1), xNP-1:xNP+1, yNP,   '*k')
-	  plot(h(1), xNP-1:xNP+1, yNP+1, '*k')
-	  for ck=1:length(rEC)
-		  plot(h(1), [rEC(ck)-2, rEC(ck)+2, rEC(ck)+2, rEC(ck)-2, rEC(ck)-2], ...
-			  [cEC(ck)-2, cEC(ck)-2, cEC(ck)+2, cEC(ck)+2, cEC(ck)-2])
-	  end
-	  hold(h(1), 'off')
+		  % Indicate electrode positions.
+		  hold(h(1), 'on')
+		  plot(h(1), xNP-1:xNP+1, yNP-1, '*k')
+		  plot(h(1), xNP-1:xNP+1, yNP,   '*k')
+		  plot(h(1), xNP-1:xNP+1, yNP+1, '*k')
+		  for ck=1:length(rEC)
+			  plot(h(1), [rEC(ck)-2, rEC(ck)+2, rEC(ck)+2, rEC(ck)-2, rEC(ck)-2], ...
+				  [cEC(ck)-2, cEC(ck)-2, cEC(ck)+2, cEC(ck)+2, cEC(ck)-2])
+		  end
+		  hold(h(1), 'off')
 	else
 		nax = length(fig.Children);
 		for ii = 0:nax - 1
@@ -243,14 +227,14 @@ end
 for i = 1: Nsteps
 
     %Save the "microscale" dynamics.
-    QeNP(i,:,:) =    Qe_grid(xNP-halfWin:xNP+halfWin, yNP-halfWin:yNP+halfWin);
-    VeNP(i,:,:) =    Ve_grid(xNP-halfWin:xNP+halfWin, yNP-halfWin:yNP+halfWin);
-    QiNP(i,:,:) =    Qi_grid(xNP-halfWin:xNP+halfWin, yNP-halfWin:yNP+halfWin);
-    ViNP(i,:,:) =    Vi_grid(xNP-halfWin:xNP+halfWin, yNP-halfWin:yNP+halfWin);
-     DNP(i,:,:) =        D22(xNP-halfWin:xNP+halfWin, yNP-halfWin:yNP+halfWin);
-     KNP(i,:,:) =          K(xNP-halfWin:xNP+halfWin, yNP-halfWin:yNP+halfWin);
-   dVeNP(i,:,:) = del_VeRest(xNP-halfWin:xNP+halfWin, yNP-halfWin:yNP+halfWin);
-   dViNP(i,:,:) = del_ViRest(xNP-halfWin:xNP+halfWin, yNP-halfWin:yNP+halfWin);
+    QeNP(i,:,:) =    Qe_grid(xNP-1:xNP+1, yNP-1:yNP+1);
+    VeNP(i,:,:) =    Ve_grid(xNP-1:xNP+1, yNP-1:yNP+1);
+    QiNP(i,:,:) =    Qi_grid(xNP-1:xNP+1, yNP-1:yNP+1);
+    ViNP(i,:,:) =    Vi_grid(xNP-1:xNP+1, yNP-1:yNP+1);
+     DNP(i,:,:) =        D22(xNP-1:xNP+1, yNP-1:yNP+1);
+     KNP(i,:,:) =          K(xNP-1:xNP+1, yNP-1:yNP+1);
+   dVeNP(i,:,:) = del_VeRest(xNP-1:xNP+1, yNP-1:yNP+1);
+   dViNP(i,:,:) = del_ViRest(xNP-1:xNP+1, yNP-1:yNP+1);
     
     %Save the "macroscale" dynamics.
     for ck=1:length(rEC)
@@ -473,26 +457,16 @@ del_ViRest(:,Ny) = del_ViRest(:,Ny-1);
       end
       
       %Visualization
-      
-      if visualize_results == 1
-          stride2 = 1e-3;
+      if visualize_results
+          stride2 = 1 / sample_rate;
 		  if floor(time(i)/stride2) > tt, 
 			  tt = tt + 1;
-%           if (mod(i, stride2) == 1 || i == Nsteps)
-% 		  if i == Nsteps
+			  
               % Image of excitatory population activity.
 			  set(ah(1), 'cdata', Qe_grid);
-			  fname = sprintf('%s%s%s_%d_%06d', ...
-				  basename, filesep, titles{1}, IC.phase, floor(time(i)*1e4));
-			  imwrite(frame2im(getframe), [fname '.png']);
-			  csvwrite([fname '.txt'], Qe_grid);
               
               % Image of inhibitory population activity.
 			  set(ah(2), 'cdata', Qi_grid);
-			  fname = sprintf('%s%s%s_%d_%06d', ...
-				  basename, filesep, titles{2}, IC.phase, floor(time(i)*1e4));
-			  imwrite(frame2im(getframe), [fname '.png']);
-			  csvwrite([fname '.txt'], Qi_grid);
               
               % Image of extracellular ion proportion.
 			  set(ah(3), 'cdata', K)
@@ -500,10 +474,6 @@ del_ViRest(:,Ny) = del_ViRest(:,Ny-1);
               
               % Image of inhibitory gap junction strength.
 			  set(ah(4), 'cdata', Qe_grid + Qi_grid);  
-			  fname = sprintf('%s%s%s_%d_%06d', ...
-				  basename, filesep, 'QeplusQi', IC.phase, floor(time(i)*1e4));
-			  imwrite(frame2im(getframe), [fname '.png']);
-			  csvwrite([fname '.txt'], Qi_grid + Qe_grid);
               drawnow;
           end
       end
@@ -544,16 +514,12 @@ last.K = K;
 %%%% Define the output variables of simulation.
 
 NP = {};
-NP.Qe = single(QeNP);
-NP.Ve = single(VeNP);
-NP.Qi = single(QiNP);
-NP.Vi = single(ViNP);
+NP.Qe = QeNP;
+NP.Ve = VeNP;
 
 EC = {};
-EC.Qe = single(QeEC);
-EC.Ve = single(VeEC);
-EC.Qi = single(QiEC);
-EC.Vi = single(ViEC);
+EC.Qe = QeEC;
+EC.Ve = VeEC;
 
 end
 
