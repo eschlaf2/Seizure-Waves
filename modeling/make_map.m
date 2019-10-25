@@ -30,7 +30,7 @@ end
 if strcmp(map_type, 'ictal_wavefront')
 
 	shrink_factor = 0.5;
-	if isempty(state) || state == 0
+	if numel(state) < Nx * Ny
 
 	  %set the initial map.
 	  state = zeros(Nx,Ny);
