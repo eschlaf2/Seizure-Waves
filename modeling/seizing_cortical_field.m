@@ -512,10 +512,6 @@ last.D22 = D22;
 last.dVe = del_VeRest;
 last.dVi = del_ViRest;
 
-imagesc(last.dVe);
-colorbar; 
-drawnow;
-
 last.K = K;
 
 %%%% Define the output variables of simulation.
